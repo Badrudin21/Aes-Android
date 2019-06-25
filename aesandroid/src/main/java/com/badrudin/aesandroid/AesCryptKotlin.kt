@@ -1,16 +1,17 @@
 package com.badrudin.aesandroid
 
 import android.util.Base64
+import android.util.Log
 import java.nio.charset.StandardCharsets
 import javax.crypto.Cipher
 import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
-object AesCryptKotlin {
+public class AesCryptKotlin{
     private val CIPHER_NAME = "AES/CBC/PKCS5PADDING"
-    private val CIPHER_KEY_LEN = 16 //128 bits
+    private val CIPHER_KEY_LEN = 16  //128 bits
 
-    fun encrypt(key: String, iv: String, data: String, encryptOnly: Boolean): String? {
+   public fun encrypt(key: String, iv: String, data: String, encryptOnly: Boolean): String? {
         var key = key
         var iv = iv
         try {
@@ -60,11 +61,10 @@ object AesCryptKotlin {
         } catch (ex: Exception) {
             ex.printStackTrace()
         }
-
         return null
     }
 
-    fun decrypt(key: String, data: String): String? {
+    public  fun decryptBase64(key: String, data: String): String? {
         if (key.length == 16) {
             try {
                 val parts = data.split(":".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
@@ -88,7 +88,7 @@ object AesCryptKotlin {
         return null
     }
 
-    fun decrypt(key: String, iv: String, data: String): String? {
+    public fun decryptBase64(key: String, iv: String, data: String): String? {
         var iv = iv
         if (key.length == CIPHER_KEY_LEN) {
             try {
