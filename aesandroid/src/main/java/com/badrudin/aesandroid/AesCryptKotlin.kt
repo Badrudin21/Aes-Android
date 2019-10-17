@@ -7,11 +7,11 @@ import javax.crypto.Cipher
 import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
-public class AesCryptKotlin{
+object AesCryptKotlin {
     private val CIPHER_NAME = "AES/CBC/PKCS5PADDING"
     private val CIPHER_KEY_LEN = 16  //128 bits
 
-   public fun encrypt(key: String, iv: String, data: String, encryptOnly: Boolean): String? {
+    fun encrypt(key: String, iv: String, data: String, encryptOnly: Boolean, type: String?): String? {
         var key = key
         var iv = iv
         try {
@@ -49,10 +49,56 @@ public class AesCryptKotlin{
 
             val encryptedData = cipher.doFinal(data.toByteArray())
 
-            val base64_EncryptedData = Base64.encodeToString(encryptedData, Base64.DEFAULT)
-            val base64_IV =
-                Base64.encodeToString(iv.toByteArray(StandardCharsets.UTF_8), Base64.DEFAULT)
-
+            var base64_EncryptedData = ""
+            var base64_IV = ""
+            if (type == null || type.isEmpty() || type.equals("Default", ignoreCase = true)) {
+                base64_EncryptedData = Base64.encodeToString(encryptedData, Base64.DEFAULT)
+                base64_IV =
+                        Base64.encodeToString(iv.toByteArray(StandardCharsets.UTF_8), Base64.DEFAULT)
+            } else {
+                when {
+                    type.equals("CRLF", ignoreCase = true) -> {
+                        base64_EncryptedData = Base64.encodeToString(encryptedData, Base64.CRLF)
+                        base64_IV =
+                                Base64.encodeToString(iv.toByteArray(StandardCharsets.UTF_8), Base64.CRLF)
+                    }
+                    type.equals("NO_CLOSE", ignoreCase = true) -> {
+                        base64_EncryptedData = Base64.encodeToString(encryptedData, Base64.NO_CLOSE)
+                        base64_IV = Base64.encodeToString(
+                                iv.toByteArray(StandardCharsets.UTF_8),
+                                Base64.NO_CLOSE
+                        )
+                    }
+                    type.equals("NO_PADDING", ignoreCase = true) -> {
+                        base64_EncryptedData = Base64.encodeToString(encryptedData, Base64.NO_PADDING)
+                        base64_IV = Base64.encodeToString(
+                                iv.toByteArray(StandardCharsets.UTF_8),
+                                Base64.NO_PADDING
+                        )
+                    }
+                    type.equals("NO_WRAP", ignoreCase = true) -> {
+                        base64_EncryptedData = Base64.encodeToString(encryptedData, Base64.NO_WRAP)
+                        base64_IV = Base64.encodeToString(
+                                iv.toByteArray(StandardCharsets.UTF_8),
+                                Base64.NO_WRAP
+                        )
+                    }
+                    type.equals("URL_SAFE", ignoreCase = true) -> {
+                        base64_EncryptedData = Base64.encodeToString(encryptedData, Base64.URL_SAFE)
+                        base64_IV = Base64.encodeToString(
+                                iv.toByteArray(StandardCharsets.UTF_8),
+                                Base64.URL_SAFE
+                        )
+                    }
+                    else -> {
+                        base64_EncryptedData = Base64.encodeToString(encryptedData, Base64.DEFAULT)
+                        base64_IV = Base64.encodeToString(
+                                iv.toByteArray(StandardCharsets.UTF_8),
+                                Base64.DEFAULT
+                        )
+                    }
+                }
+            }
             return if (encryptOnly)
                 base64_EncryptedData
             else
@@ -61,21 +107,55 @@ public class AesCryptKotlin{
         } catch (ex: Exception) {
             ex.printStackTrace()
         }
+
         return null
     }
 
-    public  fun decryptBase64(key: String, data: String): String? {
+    fun decrypt(key: String, data: String, type: String?): String? {
         if (key.length == 16) {
             try {
                 val parts = data.split(":".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
-                val iv = IvParameterSpec(Base64.decode(parts[1], Base64.DEFAULT))
+
+                var iv: IvParameterSpec? = null
+
+                var decodedEncryptedData = ByteArray(0)
+
+                if (type == null || type.isEmpty() || type.equals("Default", ignoreCase = true)) {
+                    iv = IvParameterSpec(Base64.decode(parts[1], Base64.DEFAULT))
+                    decodedEncryptedData = Base64.decode(parts[0], Base64.DEFAULT)
+                } else {
+                    when {
+                        type.equals("CRLF", ignoreCase = true) -> {
+                            iv = IvParameterSpec(Base64.decode(parts[1], Base64.CRLF))
+                            decodedEncryptedData = Base64.decode(parts[0], Base64.CRLF)
+                        }
+                        type.equals("NO_CLOSE", ignoreCase = true) -> {
+                            iv = IvParameterSpec(Base64.decode(parts[1], Base64.NO_CLOSE))
+                            decodedEncryptedData = Base64.decode(parts[0], Base64.NO_CLOSE)
+                        }
+                        type.equals("NO_PADDING", ignoreCase = true) -> {
+                            iv = IvParameterSpec(Base64.decode(parts[1], Base64.NO_PADDING))
+                            decodedEncryptedData = Base64.decode(parts[0], Base64.NO_PADDING)
+                        }
+                        type.equals("NO_WRAP", ignoreCase = true) -> {
+                            iv = IvParameterSpec(Base64.decode(parts[1], Base64.NO_WRAP))
+                            decodedEncryptedData = Base64.decode(parts[0], Base64.NO_WRAP)
+                        }
+                        type.equals("URL_SAFE", ignoreCase = true) -> {
+                            iv = IvParameterSpec(Base64.decode(parts[1], Base64.URL_SAFE))
+                            decodedEncryptedData = Base64.decode(parts[0], Base64.URL_SAFE)
+                        }
+                        else -> {
+                            iv = IvParameterSpec(Base64.decode(parts[1], Base64.DEFAULT))
+                            decodedEncryptedData = Base64.decode(parts[0], Base64.DEFAULT)
+                        }
+                    }
+                }
 
                 val sKeySpec = SecretKeySpec(key.toByteArray(StandardCharsets.UTF_8), "AES")
 
                 val cipher = Cipher.getInstance(CIPHER_NAME)
                 cipher.init(Cipher.DECRYPT_MODE, sKeySpec, iv)
-
-                val decodedEncryptedData = Base64.decode(parts[0], Base64.DEFAULT)
 
                 val original = cipher.doFinal(decodedEncryptedData)
                 return String(original)
@@ -88,7 +168,7 @@ public class AesCryptKotlin{
         return null
     }
 
-    public fun decryptBase64(key: String, iv: String, data: String): String? {
+    fun decrypt(key: String, iv: String, data: String, type: String?): String? {
         var iv = iv
         if (key.length == CIPHER_KEY_LEN) {
             try {
@@ -114,7 +194,25 @@ public class AesCryptKotlin{
                 val cipher = Cipher.getInstance(CIPHER_NAME)
 
                 cipher.init(Cipher.DECRYPT_MODE, sKeySpec, initVector)
-                val decodedEncryptedData = Base64.decode(parts[0], Base64.DEFAULT)
+                var decodedEncryptedData = ByteArray(0)
+
+                if (type == null || type.isEmpty() || type.equals("Default", ignoreCase = true)) {
+                    decodedEncryptedData = Base64.decode(parts[0], Base64.DEFAULT)
+                } else {
+                    decodedEncryptedData = if (type.equals("CRLF", ignoreCase = true)) {
+                        Base64.decode(parts[0], Base64.CRLF)
+                    } else if (type.equals("NO_CLOSE", ignoreCase = true)) {
+                        Base64.decode(parts[0], Base64.NO_CLOSE)
+                    } else if (type.equals("NO_PADDING", ignoreCase = true)) {
+                        Base64.decode(parts[0], Base64.NO_PADDING)
+                    } else if (type.equals("NO_WRAP", ignoreCase = true)) {
+                        Base64.decode(parts[0], Base64.NO_WRAP)
+                    } else if (type.equals("URL_SAFE", ignoreCase = true)) {
+                        Base64.decode(parts[0], Base64.URL_SAFE)
+                    } else {
+                        Base64.decode(parts[0], Base64.DEFAULT)
+                    }
+                }
 
                 val original = cipher.doFinal(decodedEncryptedData)
                 return String(original)
